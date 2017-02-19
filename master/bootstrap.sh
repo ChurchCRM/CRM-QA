@@ -9,9 +9,6 @@ if [[ ! -d /var/www/public ]]; then
   mkdir /var/www/public
 fi 
 
-sudo chown -R vagrant:vagrant /var/www/public
-sudo chmod a+rwx /var/www/public
-
 ip=`ifconfig eth1 2>/dev/null|awk '/inet addr:/ {print $2}'|sed 's/addr://'`
 branch=master
 export branch
@@ -27,6 +24,8 @@ wget -nv -O /tmp/$filename  $sourceURL
 unzip -d /tmp/churchcrm /tmp/$filename
 shopt -s dotglob  
 mv  /tmp/churchcrm/churchcrm/* /var/www/public/
+sudo chown -R vagrant:vagrant /var/www/public
+sudo chmod a+rwx /var/www/public
 CRM_DB_USER="churchcrm"
 CRM_DB_PASS="churchcrm"
 CRM_DB_NAME="churchcrm"
