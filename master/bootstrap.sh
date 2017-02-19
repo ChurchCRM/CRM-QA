@@ -12,9 +12,18 @@ fi
 sudo chown -R vagrant:vagrant /var/www/public
 sudo chmod a+rwx /var/www/public
 
+ip=`ifconfig eth1 2>/dev/null|awk '/inet addr:/ {print $2}'|sed 's/addr://'`
+branch=master
+export branch
+sourceFile=$(curl -s http://demo.churchcrm.io | perl -ne 'print $1 if /"$ENV{branch}0".*?(ChurchCRM.*?)"/')
+sourceURL="http://demo.churchcrm.io/builds/$branch/$sourceFile"
 filename=ChurchCRM.zip
 
-wget -nv -O /tmp/$filename http://demo.churchcrm.io/builds/master/ChurchCRM-2.6.0-378e3e0.zip
+echo "=========================================================="
+echo "Downloading $sourceURL to $filename"
+echo "=========================================================="
+
+wget -nv -O /tmp/$filename  $sourceURL
 unzip -d /tmp/churchcrm /tmp/$filename
 shopt -s dotglob  
 mv  /tmp/churchcrm/churchcrm/* /var/www/public/
@@ -58,8 +67,8 @@ echo "Database: user created with needed PRIVILEGES"
 # Help info
 
 echo "============================================================================="
-echo "======== ChurchCRM is now hosted @ http://192.168.33.21/       =============="
-echo "======== Version is: $launchversion                            =============="
+echo "======== ChurchCRM is now hosted @ http://$ip/       =============="
+echo "======== Version is: $sourceFile                            =============="
 echo "======== CRM User Name: admin                                  =============="
 echo "======== 1st time login password for admin: changeme           =============="
 echo "============================================================================="

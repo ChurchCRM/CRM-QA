@@ -3,6 +3,8 @@
 #=============================================================================
 # DB Setup
 
+rm -rf /var/www/public/*
+
 if [[ ! -d /var/www/public ]]; then
   mkdir /var/www/public
 fi 
@@ -10,37 +12,24 @@ fi
 sudo chown -R vagrant:vagrant /var/www/public
 sudo chmod a+rwx /var/www/public
 
-rm -rf /var/www/public/*
-launchversion=`grep -i '^[^#;]' /vagrant/VersionToLaunch`
+ip=`ifconfig eth1 2>/dev/null|awk '/inet addr:/ {print $2}'|sed 's/addr://'`
+branch=develop
+export branch
+sourceFile=$(curl -s http://demo.churchcrm.io | perl -ne 'print $1 if /"$ENV{branch}0".*?(ChurchCRM.*?)"/')
+sourceURL="http://demo.churchcrm.io/builds/$branch/$sourceFile"
+filename=ChurchCRM.zip
 
-if [ -f /vagrant/$launchversion ] ; then
-  echo "bootstrapping from zip file located at $launchversion"
-  unzip -d /tmp/churchcrm /vagrant/$launchversion
-  shopt -s dotglob  
-  mv  /tmp/churchcrm/churchcrm/* /var/www/public/
-  CRM_DB_INSTALL_SCRIPT="/var/www/public/mysql/install/Install.sql"
-  CRM_DB_USER="churchcrm"
-  CRM_DB_PASS="churchcrm"
-  CRM_DB_NAME="churchcrm"
-  CRM_DB_RESTORE_SCRIPT="/vagrant/ChurchCRM-Database.sql"
+echo "=========================================================="
+echo "Downloading $sourceURL to $filename"
+echo "=========================================================="
 
-
-elif [[ $launchversion =~ [2\.] ]] ; then
-  echo "bootstrapping $launchversion"
-  filename=ChurchCRM-$launchversion.zip
-  wget -nv -O /tmp/$filename https://github.com/ChurchCRM/CRM/releases/download/$launchversion/$filename
-  unzip -d /tmp/churchcrm /tmp/$filename
-  shopt -s dotglob  
-  mv  /tmp/churchcrm/churchcrm/* /var/www/public/
-  CRM_DB_INSTALL_SCRIPT="/var/www/public/mysql/install/Install.sql"
-  CRM_DB_USER="churchcrm"
-  CRM_DB_PASS="churchcrm"
-  CRM_DB_NAME="churchcrm"
-
-else
-  echo "version string not valid"
-  exit 1
-fi
+wget -nv -O /tmp/$filename  $sourceURL
+unzip -d /tmp/churchcrm /tmp/$filename
+shopt -s dotglob  
+mv  /tmp/churchcrm/churchcrm/* /var/www/public/
+CRM_DB_USER="churchcrm"
+CRM_DB_PASS="churchcrm"
+CRM_DB_NAME="churchcrm"
 
 DB_USER="root"
 DB_PASS="root"
@@ -74,20 +63,12 @@ sudo mysql -u"$DB_USER" -p"$DB_PASS" -e "GRANT ALL PRIVILEGES ON $CRM_DB_NAME.* 
 sudo mysql -u"$DB_USER" -p"$DB_PASS" -e "FLUSH PRIVILEGES;"
 echo "Database: user created with needed PRIVILEGES"
 
-if [ -f "$CRM_DB_RESTORE_SCRIPT" ]; then
-  sudo mysql -u"$CRM_DB_USER" -p"$CRM_DB_PASS" "$CRM_DB_NAME" < $CRM_DB_RESTORE_SCRIPT
-fi
-
-if [ -f "$CRM_DB_INSTALL_SCRIPT" ]; then
-  sudo mysql -u"$CRM_DB_USER" -p"$CRM_DB_PASS" "$CRM_DB_NAME" < $CRM_DB_INSTALL_SCRIPT
-fi
-
 #=============================================================================
 # Help info
 
 echo "============================================================================="
-echo "======== ChurchCRM is now hosted @ http://192.168.33.12/       =============="
-echo "======== Version is: $launchversion                            =============="
+echo "======== ChurchCRM is now hosted @ http://$ip/       =============="
+echo "======== Version is: $sourceFile                            =============="
 echo "======== CRM User Name: admin                                  =============="
 echo "======== 1st time login password for admin: changeme           =============="
 echo "============================================================================="
