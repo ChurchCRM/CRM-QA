@@ -1,1 +1,3 @@
-.vagrant
+.vagrant/
+ChurchCRM-Database.sql
+*.zip
